@@ -1,0 +1,223 @@
+---
+title: "cah"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{cah}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+#devtools::build_rmd("vignettes/cah.Rmd")
+```
+
+IMPORTANT: THIS PACKAGE IS UNDER DEVELOPMENT. IT'S AVAILABLE HERE FOR DEVELOPMENT AND TESTING PURPOSES ONLY.
+
+## Set up
+
+*If you followed the instructions when installing, you should have already set things up. Just in case you haven't yet, I'll repeat the set-up instructions here.*
+
+### Box Sync and Google Drive
+
+Several `cah` functions read files in the CAH Box and Drive folders. Rather than reading in the files via the Box and Drive APIs, `cah` assumes you have Box Sync and Google Drive on your desktop (which everybody is supposed to have in any case). If you don't have Box Sync and/or Google Drive installed and running on this computer, you can click the following links for info about [Box Sync](https://support.box.com/hc/en-us/articles/360043697194-Installing-Box-Sync) and/or [Google Drive](https://www.google.com/drive/download/).
+
+### Set global options in .Rprofile
+
+You need to tell `cah` the paths of the CAH Box and Drive folders. In Box, the folder is called `CAH Shared`; in Drive, it's called `CAH`. The paths are different for everybody, but will look like this:
+
+* `/Users/yourname/Library/CloudStorage/Box-Box/CAH/CAH Shared`
+* `/Users/yourname/Library/CloudStorage/GoogleDrive-youremail@gmail.com/.shortcut-targets-by-id/somestring/CAH/CAH Shared Drive`
+
+Now specify these paths as global options in your `.Rprofile` file, for options named `cah.box_path` and `cah.drive_path`. Something like this:
+
+```{r, eval = FALSE}
+options(
+  cah.box_path = "/Users/yourname/Library/CloudStorage/Box-Box/CAH/CAH Shared",
+  cah.drive_path = "/Users/yourname/Library/CloudStorage/GoogleDrive-youremail@gmail.com/.shortcut-targets-by-id/somestring/CAH/CAH Shared Drive"
+)
+```
+```{r, include = FALSE}
+options(
+  cah.box_path = 
+    "/Users/jwl38/Library/CloudStorage/Box-Box/CAH/CAH Shared",
+  cah.drive_path = paste0(
+    "/Users/jwl38/Library/CloudStorage/GoogleDrive-janwillem.lindemans@gmail.com/",
+    ".shortcut-targets-by-id/1mCSu5zzZGk4BAPPBaZCMQXwnKmOPQSfU/CAH/CAH Shared Drive"
+  )
+)
+```
+
+If you haven't used `.Rprofile` before, it's a hidden file with code that R runs at startup. It should be located in your home/user folder (e.g., `Users/yourname/.Rprofile`). Learn more about `.Rprofile` on the [Posit Support page](https://support.posit.co/hc/en-us/articles/360047157094-Managing-R-with-Rprofile-Renviron-Rprofile-site-Renviron-site-rsession-conf-and-repos-conf).
+
+### Install the `better` package
+
+If you want to make guesstimates about the impact of health nudges, you can use the `better` package. `cah` will take care of a bunch of things in the background: `better` makes use of Global Burden of Disease data for its guesstimates, and `cah` makes sure your global options point `better` towards the dataset downloaded in CAH Box. So you'll be all good to go.
+
+Download it here:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("janlindemans/better")
+```
+
+Note that `cah` has taken care of the global options for `better`.
+
+```{r}
+library(cah)
+getOption("better.gbd_path")
+better::gbd_read()
+```
+
+`better` found the Global Burden of Disease data in CAH Box, yay!
+
+## Use the `better` package
+
+Now you're set up to use `better`!
+
+<!-- COPY from better vignette, from the Quick Intro part: edit original there -->
+
+
+```{r, include = FALSE}
+library(better)
+library(tidyverse)
+# So that the once-per-session messages are gone:
+nudge("information") %>% 
+  disease("cardiovascular diseases")
+```
+
+The main purpose of `better` is to help you better guesstimate the effect of health nudges, that is, behavioral interventions targeted at health behaviors. 
+
+Imagine you are designing a public health campaign. You are thinking about focusing on preventing cardiovascular diseases, and you are considering making information about healthy lifestyle more accessible. What effects can you expect from a campaign like that? 
+
+This is how we would make a guesstimate with `better`. Let's load it, and let's also load `tidyverse`, so we can use pipes and other tidy constructions.
+
+```{r}
+library(better)
+library(tidyverse)
+```
+
+Then, we tell `better::nudge` what kind of nudge we are envisioning: in our case `"information"`. We pipe the result into `better::disease` and tell it what disease we are targeting: `"cardiovascular diseases"`.
+
+```{r}
+nudge("information") %>% 
+  disease("cardiovascular diseases")
+```
+
+You get some rich output, but the main thing is the number below "Value": `r nudge("information") %>% disease("cardiovascular diseases") %>% {round(.$value)} %>% format(big.mark = ",")` DALYs. What does it mean? If we're going to roll out an information nudge in 100,000 people, targeted at cardiovascular diseases, we're expected to boost disability adjusted life years by about `r nudge("information") %>% disease("cardiovascular diseases") %>% {round(.$value)} %>% format(big.mark = ",")` years. Note that DALYs (disability adjusted life years) refers to healthy life years - life years without disease or disability.
+
+Now, to get the estimate, we called two functions: `nudge()` and `disease()`. That's because we first guesstimate the effect of the nudge on behavior, and then we guesstimate the effect of behavior on disease (DALYs). You can check out the effect of the nudge on behavior by only calling the first function:
+
+```{r}
+nudge("information")
+```
+
+The philosophy of `better` is to create pipes of guesstimate functions, like `nudge()` and `disease()`, to get a more complicated guesstimate consisting of multiple steps. We can get the full explanation of the guesstimate with `better::explanation()`:
+
+```{r}
+nudge("information") %>% 
+  disease("cardiovascular diseases") %>%
+  explanation
+```
+
+This output also shows you that there was an intermediate step in the calculation.
+
+Let's see what happens if we would shift the focus of our intervention to diabetes and kidney diseases. To simplify the output, I use `better::effect_only`. It prints only the effect, leaving out the parameters and explanation.
+
+```{r}
+nudge("information") %>%
+  disease("diabetes and kidney diseases") %>%
+  effect_only
+```
+
+What if we tried a structural nudge?
+
+```{r}
+nudge("structure") %>%
+  disease("diabetes and kidney diseases") %>%
+  effect_only
+```
+
+What if we wanted to see the impact on deaths?
+
+```{r}
+nudge("structure") %>%
+  disease("diabetes and kidney diseases", measure = "deaths") %>%
+  effect_only
+```
+
+You can also get quick power calculations. Say you want to run an experiment, testing the information nudge, with two conditions: a treatment, and a control. You hypothesize the nudge will decrease risky behaviors. How many observations do you need in each condition?
+
+```{r}
+nudge("information") %>% 
+  sample_size
+```
+```{r, include = FALSE}
+pcalc <- nudge("information") %>% 
+  sample_size
+```
+
+So, you need about `r round(pcalc$n) %>% format(big.mark = ",")` observations per condition. You may recognize this kind of output. It's the output of `pwr.t.test()` from the `pwr` package, because `sample_size()` wraps that function.
+
+Alternatively, you may want to be sufficiently powered to discern an impact on health - say on the death rate. 
+
+```{r, include = FALSE}
+nudge("information") %>%
+  disease("cardiovascular diseases", measure = "deaths") %>%
+  sample_size
+```
+
+Of course you need a much larger sample to be able to detect a difference in mortality.
+
+<!-- END COPY from better vignette: edit original there -->
+
+For more information on `better`, check out the vignette with `vignette("better")`.
+
+## CAH paths
+
+`cah` helps you with paths to commonly used files. You can retrieve a dataframe with the available files with `cah::cah_files`:
+
+```{r}
+library(cah)
+cah_files()
+```
+
+Several `cah` functions allow you to feed it the short name of the file, unquoted:
+
+```{r}
+cah_files(box)
+cah_path(box)
+cah_files(projects_sheet)
+cah_path(projects_sheet)
+```
+
+You could for instance use it to read in a sheet:
+
+```{r}
+readxl::read_excel(cah_path(projects_sheet))
+```
+
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
