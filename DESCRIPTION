@@ -1,13 +1,27 @@
 Package: cah
-Title: What the Package Does (One Line, Title Case)
+Title: Useful tools for CAHers
 Version: 0.0.0.9000
 Authors@R: 
     person("Jan", "Lindemans", , "janwillem.lindemans@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "https://orcid.org/0000-0002-3702-8651"))
-Description: What the package does (one paragraph).
+Description: The `cah` package contains useful tools for CAHers. The two main categories of tools are: tools that make statistical analysis easier, and tools that make collaboration easier. In addition, there's tools that help with research project coorination, etc.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.1
 URL: https://github.com/janlindemans/cah
 BugReports: https://github.com/janlindemans/cah/issues
+Suggests: 
+    better,
+    knitr,
+    readr,
+    readxl,
+    rmarkdown,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Imports: 
+    dplyr,
+    purrr,
+    rlang,
+    tibble
+VignetteBuilder: knitr

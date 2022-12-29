@@ -1,0 +1,168 @@
+---
+title: "cah"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{cah}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+#devtools::build_rmd("vignettes/cah.Rmd")
+```
+
+## Set up
+
+*If you followed the instructions when installing, you should have already set things up. Just in case you haven't yet, I'll repeat the set-up instructions here.*
+
+For the `CAH Shared` folder in Box, and the `CAH` folder in Drive, set the options in your `.Rprofile` file - it will be used by several `cah` functions.
+
+Something like this:
+
+```{r, eval = FALSE}
+options(
+  cah.box_path = 
+    "/Users/yourname/Library/CloudStorage/Box-Box/CAH/CAH Shared",
+  cah.drive_path = paste0(
+    "/Users/yourname/Library/CloudStorage/GoogleDrive-youremail@gmail.com/",
+    ".shortcut-targets-by-id/somestring/CAH/CAH Shared Drive"
+  )
+)
+```
+```{r, include = FALSE}
+options(
+  cah.box_path = 
+    "/Users/jwl38/Library/CloudStorage/Box-Box/CAH/CAH Shared",
+  cah.drive_path = paste0(
+    "/Users/jwl38/Library/CloudStorage/GoogleDrive-janwillem.lindemans@gmail.com/",
+    ".shortcut-targets-by-id/1mCSu5zzZGk4BAPPBaZCMQXwnKmOPQSfU/CAH/CAH Shared Drive"
+  )
+)
+```
+
+If you haven't used `.Rprofile` before, it's a hidden file with code R runs at startup. It's located somewhere somewhere similar to this: `Users/johnwilliam/.Rprofile`. Learn more about `.Rprofile` on [the Posit Support page](https://support.posit.co/hc/en-us/articles/360047157094-Managing-R-with-Rprofile-Renviron-Rprofile-site-Renviron-site-rsession-conf-and-repos-conf).
+
+
+## CAH paths
+
+`cah` helps you with paths to commonly used files:
+
+```{r}
+library(cah)
+cah_files()
+cah_files(box)
+cah_path(box)
+```
+
+Open the Box folder:
+
+```{r eval = FALSE}
+system2("open", shQuote(cah_path(box)))
+```
+
+Read a file:
+
+```{r}
+cah_files(projects_sheet)
+cah_path(projects_sheet)
+readxl::read_excel(cah_path(projects_sheet))
+```
+
+## Use the `better` package
+
+
+
+```{r}
+# cah makes it easy to use other libraries by helping set path options
+#cah_set_options()
+library(tidyverse)
+library(better)
+
+nudge_to_behavior(nudge = "structure", behavior = "health") 
+
+
+vignette("better")
+gbd_load()
+gbd_list$gbd
+```
+
+The main purpose of `better` is to help you better guestimate the effect of health nudges, that is, behavioral interventions targeted at health behaviors. 
+
+Imagine you are designing a public health campaign. You are thinking about focusing on preventing cardiovascular diseases, and you are considering making information about healthy lifestyle more accessible. What effects can you expect from a campaign like that? This is how we would do it with `better`.
+
+First, we look up the effect of an information nudge on health behavior.
+
+```{r}
+library(tidyverse)
+library(better)
+nudge_to_behavior(nudge = "information", behavior = "health") 
+```
+
+This gives us a Cohen's *d*, a standardized effect size for the health information nudge, namely, *d* = `r nudge_to_behavior(nudge = "information", behavior = "health")$value`.
+
+Second, as an intermediate step, we translate Cohen's *d* into a percentage point difference.
+
+```{r}
+nudge_to_behavior(nudge = "information", behavior = "health") %>%
+  behavior_cd_to_pp
+```
+
+This gives us a decrease of `r nudge_to_behavior(nudge = "information", behavior = "health") %>% behavior_cd_to_pp %>% {round(abs(.$value),1)}` percentage points.
+
+Finally, we can get our guestimate of the effect:
+
+```{r}
+nudge_to_behavior(nudge = "information", behavior = "health") %>%
+  behavior_cd_to_pp %>%
+  behavior_to_disease("cardiovascular diseases")
+```
+
+We learned something! If we're going to roll out an information nudge in 100,000 people, targeted at cardiovascular diseases, we're expected to boost disability adjusted life years by about `r nudge_to_behavior(nudge = "information", behavior = "health") %>% behavior_cd_to_pp %>% behavior_to_disease("cardiovascular diseases") %>% {round(.$value)}` years! That's not bad. 
+
+Note that this is based on the following statistic:
+
+```{r}
+gbd_describe(cause = "cardiovascular diseases")
+```
+
+Let's see, what if we would shift the focus of our intervention to diabetes and kidney diseases?
+
+```{r}
+nudge_to_behavior(nudge = "information", behavior = "health") %>%
+  behavior_cd_to_pp %>%
+  behavior_to_disease("diabetes and kidney diseases")
+```
+
+What if we tried a structural nudge?
+
+```{r}
+nudge_to_behavior(nudge = "structure", behavior = "health") %>%
+  behavior_cd_to_pp %>%
+  behavior_to_disease("diabetes and kidney diseases")
+```
+
+
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
