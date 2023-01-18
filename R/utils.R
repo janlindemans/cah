@@ -1,3 +1,29 @@
+
+# Developer functions -----------------------------------------------------
+
+dvl_before_install <- function() {
+
+  # copy html s into inst
+  PACKAGE_PATH <- find.package("cah")
+  ARTICLES <- list.files(
+    paste0(PACKAGE_PATH,"/vignettes"),
+    full.names = TRUE,
+    recursive = TRUE
+  )
+  ARTICLES <- stringr::str_subset(ARTICLES,".html$")
+  ARTICLES <- tibble::tibble(path = ARTICLES)
+  ARTICLES$basename <- basename(ARTICLES$path)
+  ARTICLES <- dplyr::arrange(ARTICLES, dplyr::desc(nchar(ARTICLES$path)))
+  ARTICLES <- dplyr::mutate(ARTICLES, duplicated = duplicated(basename))
+  ARTICLES <- ARTICLES[!ARTICLES$duplicated,]
+  ARTICLES <- ARTICLES$path
+  file.copy(ARTICLES, paste0(PACKAGE_PATH,"/inst/cah_vignettes"), overwrite = TRUE)
+}
+
+# Main --------------------------------------------------------------------
+
+
+
 # Options are set in .Rprofile, so no need for this:
 # set_path_options <- function(x, cah_path = FALSE) {
 #
@@ -114,7 +140,7 @@ set_path_options <- function(..., force = FALSE) {
   x <- list(...) # list of split paths with option name as name: list(better.path = c("folder","file"))
   opts_list <- list() # to feed to options
 
-  message("Setting path options.")
+  message("Setting path options:")
   for (i in 1:length(x)) { # do it per path, all the checks
     #browser()
     path_parent <- x[[i]][1]
@@ -122,7 +148,7 @@ set_path_options <- function(..., force = FALSE) {
     option_name <- names(x)[i]
     names(path) <- option_name
 
-    message("Path: ", option_name)
+    message("  ",option_name," = ",path)
 
     # Check if already in options:
     #browser()
@@ -175,13 +201,15 @@ set_path_options <- function(..., force = FALSE) {
 
 #' Set global options
 #'
-#' Sets global options for things like the `better` package, specifying the default paths `better` will use in many of its functions.
+#' Sets global options for things like the `better` package, specifying the default paths `better` will use in many of its functions. Automatically called when loading `cah`.
 #'
 #' @param force Whether or not to force setting cah options if options are already found
 #' @return NULL
 #' @export
 #'
 #' @examples
+#' # Normally the options are already set when loading `cah`.
+#' # But you can also do it manually, perhaps after you changed some paths.
 #' # `cah_set_options` assumes you already specified your local path
 #' # to the `CAH Shared` folder in Box.
 #' # Hopefully you did this in your .Rprofile file (see README).
@@ -189,8 +217,7 @@ set_path_options <- function(..., force = FALSE) {
 #' options(
 #'   cah.box_path = "/Users/jwl38/Library/CloudStorage/Box-Box/CAH/CAH Shared"
 #' )
-#'
-#' # If you did this, then setting `better` options is easy:
+#' # If you did this, you can now set `better` options:
 #' cah_set_options()
 cah_set_options <- function(force = FALSE) {
   if (is.null(options()$cah.box_path)) {
@@ -322,6 +349,9 @@ get_cahfls <- function(x) {
   # todo: kind: Box or Drive
   cahfls <- dplyr::select(cahfls, "short", "name", "parent", dplyr::everything())
 
+  #browser()
+  cahfls <- dplyr::arrange(cahfls, cahfls$short)
+
   return(cahfls)
 }
 #cahfls <- get_cahfls()
@@ -403,22 +433,39 @@ cah_files <- function(...) {
   return(y)
 }
 
-#' Install the `better` package
+#' (Re)install the `cah` and `better` packages
 #'
-#' Wrapper around `remotes::install_github`, which you may know as `devtools::install_github`. Since the `better` package is currently in development, it may change often, and you may want to update to the latest version often.
+#' Wrapper around `remotes::install_github`, which you may know as `devtools::install_github`. Since the `cah` and `better`  packages are currently in development, they may change often, and you may want to update to the latest version often.
 #'
-#' @param ... Optional arguments passed on to `remotes::install_github`.
+#' @param ... Packages you want to (re)install, unquoted. Options: `cah`, `better`.
+#' @param build_vignettes Whether or not to build vignettes when installing, by default TRUE, and passed on to `remotes::install_github()`.
 #'
-#' @return Package name returned by `remotes::install_github`, invisible.
+#' @return Package(s) installed, string, invisible.
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' install_better()
+#' cah_install()
+#' cah_install(better)
+#' cah_install(cah, better)
 #' }
-install_better <- function(...) {
-  remotes::install_github("janlindemans/better", ...)
-}#; tt <- install_better()
+cah_install <- function(..., build_vignettes = TRUE) {
+
+  arg <- rlang::ensyms(...)
+  if (length(arg) > 0) {
+    arg <- unname(purrr::map_chr(arg, rlang::as_string))
+  } else {
+    arg <- "cah"
+  }
+  for (i in arg) {
+    #browser()
+    remotes::install_github(
+      paste0("janlindemans/",i),
+      build_vignettes = build_vignettes,
+    )
+  }
+  invisible(arg)
+}#; cah_install(cah, better)
 
 
 .onLoad <- function(libname, pkgname) {
@@ -446,6 +493,185 @@ install_better <- function(...) {
 .onAttach <- function(libname, pkgname) {
   packageStartupMessage(
     "\nWelcome to the cah package!",
-    "\nTo learn more, read the vignette by running `vignette(\"cah\")`."
+    "\nTo learn more, read the vignette with `cah_vignette()`."
     )
 }
+
+#' CAH theme for ggplot
+#'
+#' @return Plot
+#' @export
+#'
+#' @examples
+#' library(tidyverse)
+#' p1 <- tibble(
+#'   gender = c(rep("Male",10),rep("Female",10)),
+#'   x = c(1:10,1:10),
+#'   y = c(10:1,1:10)
+#'   ) %>%
+#'   ggplot(aes(x,y,color=gender)) +
+#'   geom_line() +
+#'   labs(x = "Some variable", y = "Some other variable", title = "Some title")
+#' p1 # default theme
+#' p1 + theme_cah()
+theme_cah <- function(){
+
+  #Setting parameters for plots
+  #resolution_dpi <- 600 #If we want to change the resolution for ggsave, we need to change it here too
+  sysfonts::font_add_google(name = "Montserrat", family = "Montserrat") #Grabbing Montserrat
+  sysfonts::font_add_google(name = "Roboto", family = "Roboto") #Grabbing Roboto (Don't know how to pick "light roboto" yet...)
+  #showtext::showtext_opts(dpi = resolution_dpi)
+  showtext::showtext_auto(enable = TRUE)
+  font <- "Roboto"   #assign font family up front - this one is used in everything but the title
+
+  cahDarkBlue <- "#00607A"
+  cahMedBlue <- "#0089AA"
+  cahLightBlue <- "#7CD1E8"
+  cahGrey <- "#B4B4B3"
+  cahLightOrange <- "#FFBC84"
+  cahMedOrange <- "#FF9954"
+  cahDarkOrange <- "#E25B00"
+  cahYellow <- "#FEC010"
+  cahDarkGrey <- "#848586"
+
+  cahColor3Rev <- c(cahGrey, cahMedOrange,cahLightBlue)
+  cahColor2 <- c(cahLightBlue, cahMedOrange)
+  cahColor2Rev <- c(cahMedOrange, cahLightBlue)
+  cahColor3 <- c(cahLightBlue,  cahMedOrange, cahGrey)
+  cahColor5 <- c(cahDarkBlue, cahLightBlue, cahGrey, cahLightOrange, cahDarkOrange)
+  cahColor7 <- c(cahDarkBlue, cahMedBlue, cahLightBlue, cahGrey, cahLightOrange, cahMedOrange, cahDarkOrange)
+
+  ggplot2::`%+replace%`(ggplot2::theme_minimal(),     #replace elements we want to change
+
+    ggplot2::theme(
+
+      #grid elements
+      panel.grid.major = ggplot2::element_blank(),    #strip major gridlines
+      panel.grid.minor = ggplot2::element_blank(),    #strip minor gridlines
+      axis.line.x.bottom = ggplot2::element_line(size = 1, color = "#b4b4b3"),      #create x-axis line
+      axis.line.y = ggplot2::element_blank(),          #strip axis ticks
+
+      #since theme_minimal() already strips axis lines,
+      #we don't need to do that again
+
+      #text elements
+      plot.title = ggplot2::element_text(             #title
+        family = "Montserrat",            #set font family
+        size = 12,                #set font size
+        face = NULL,            #bold typeface
+        hjust = 0.5,                #left align
+        vjust = 0,
+        color = cahDarkGrey,
+        margin = ggplot2::margin(t = 0, r = 0, b = .17, l = 0, unit = "inches")),
+
+      plot.subtitle = ggplot2::element_text(          #subtitle
+        family = "Montserrat",            #font family
+        size = 10,
+        color = cahDarkGrey),               #font size
+
+      plot.caption = ggplot2::element_text(           #caption
+        family = font,            #font family
+        size = 9 ,                 #font size
+        hjust = 1,
+        color = cahDarkGrey),               #right align
+
+      axis.title = ggplot2::element_text(             #axis titles
+        family = font,                #font family
+        size = 9,
+        color = cahDarkGrey),               #font size
+
+      axis.text = ggplot2::element_text(              #axis text
+        family = font,            #axis famuly
+        size = 9,
+        color = cahDarkGrey,
+        lineheight = 11),
+      axis.title.x = ggplot2::element_text(size=10,
+                                family = font,
+                                color = cahDarkGrey,
+                                lineheight = 11,
+                                margin  = ggplot2::margin(t = .1,  unit = "inches")), #Give some breathing room for x-axis title
+      legend.position = "bottom", #Putting the legend on the bottom
+      legend.title = ggplot2::element_text(color = cahDarkGrey, size = 10, margin = ggplot2::margin(t = 5, r = 0, b = 0, l = 0)),
+      legend.text = ggplot2::element_text(color = cahDarkGrey, size = 7, margin = ggplot2::margin(t = 5, r = 0, b = 0, l = 0)),
+      strip.text = ggplot2::element_text(size = 9, color = cahGrey, lineheight = 11) #Facets
+    ))
+}
+if (FALSE) {
+  library(ggplot2)
+  library(gridExtra)
+
+  p1 <- tibble(
+    gender = c(rep("Male",10),rep("Female",10)),
+    x = c(1:10,1:10),
+    y = c(10:1,1:10)
+  ) %>%
+    ggplot(aes(x,y,color=gender)) +
+    geom_line() +
+    labs(x = "Some variable", y = "Some other variable")
+
+  grid.arrange(
+    p1 +
+      labs(title = "Default theme"),
+    p1 +
+      labs(title = "CAH theme"),
+    ncol = 2
+  )
+
+  grid.arrange(
+    p1 +
+      labs(title = "Default theme"),
+    p1 +
+      labs(title = "CAH theme") +
+      theme_cah(),
+    ncol = 2
+  )
+}
+
+#' Get pre-installed `cah` vignettes
+#'
+#' Open the HTML files of pre-installed vignettes.
+#'
+#' Some `cah` vignettes require things that you may not had set up yet at the time of installing `cah`. Since such vignettes can't be built at the time of installation (which is how regular vignettes are created), they are pre-installed as HTML files. Use `cah_vignette` to access them. Strictly speaking, they aren't vignettes. You can't access them with `vignette(*, package = "cah")`. But they are articles that fulfill the role of typical vignettes. Note that you can also use `cah_vignette()` for true vignettes that are also accessible with `vignette(*, package = "cah")`.
+#'
+#' @param ... The name(s) of the vignette(s) you want to read, unquoted. By default, if you don't specify anything, it's all the vignettes. Options are: `r paste(stringr::str_remove(list.files(system.file("cah_vignettes", package = "cah")),".html$"), collapse = ", ")`.
+#'
+#' @return Names of the vignettes, invisible.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' cah_vignette()
+#' cah_vignette(cah)
+#' cah_vignette(`better-demo`)
+#' cah_vignette(cah, "better-demo")
+#' }
+cah_vignette <- function(...) {
+  arg <- rlang::ensyms(...)
+  if (length(arg) > 0) {
+    arg <- unname(purrr::map_chr(arg, rlang::as_string))
+  } else {
+    #browser()
+    arg <- stringr::str_remove(
+      list.files(system.file("cah_vignettes", package = "cah")),
+      ".html$"
+    )
+    arg <- unique(c("cah", arg)) # start with cah, so that's the page that will be open
+    #arg <- "cah"
+  }
+  #browser()
+  for (i in rev(arg)) {
+    #browser()
+    namei <- paste0(i,".html")
+    filei <- system.file("cah_vignettes", namei, package = "cah")
+    if (filei == "") {
+      warning("The following file not found in cah_vignettes: ", namei)
+    } else {
+      system2(
+        "open",
+        shQuote(filei)
+      )
+    }
+  }
+  invisible(arg)
+}#; cah_vignette()#; cah_vignette(`better.demo`, cah)
+

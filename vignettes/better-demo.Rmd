@@ -1,0 +1,369 @@
+---
+title: "Demo of `better` package"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Demo of `better` package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+Here's the code for the demo I did in the Health jam:
+
+```{r, include = FALSE}
+options(
+  cah.box_path = "/Users/jwl38/Library/CloudStorage/Box-Box/CAH/CAH\ Shared"
+)
+```
+
+```{r, eval = FALSE}
+
+# Demo
+
+
+# Prep JW -----------------------------------------------------------------
+
+options(better.gbd_path = NULL)
+library(cah)
+library(better)
+nudge("information") %>%
+  disease("diabetes and kidney diseases")
+
+
+# Basics of effect guesstimates -------------------------------------------
+
+library(tidyverse)
+library(better)
+
+# Effect of nudge X on disease Y
+nudge("information") %>%
+  disease("diabetes and kidney diseases")
+# WHO: "One DALY represents the loss of the equivalent of one year of full health. DALYs for a disease or health condition are the sum of the years of life lost to due to premature mortality (YLLs) and the years lived with a disability (YLDs) due to prevalent cases of the disease or health condition in a population."
+nudge("information") %>%
+  disease("anxiety disorders") %>% # different disease
+  effect_only
+nudge("information") %>%
+  disease("diabetes and kidney diseases") %>%
+  effect_only
+nudge("structure") %>% # different nudge
+  disease("diabetes and kidney diseases") %>%
+  effect_only
+nudge("information") %>%
+  disease("diabetes and kidney diseases", measure = "deaths") %>% # different measure
+  effect_only
+nudge("information") %>%
+  disease("diabetes and kidney diseases", measure = "DALYs") %>%
+  effect_only # DALYs = YLLs + YLDs
+nudge("information") %>%
+  disease("diabetes and kidney diseases", measure = "YLLs") %>%
+  effect_only
+nudge("information") %>%
+  disease("diabetes and kidney diseases", measure = "YLDs") %>%
+  effect_only
+
+# Cost of disability
+nudge("information") %>%
+  disease("diabetes and kidney diseases", measure = "YLDs") %>%
+  cost
+nudge("structure") %>%
+  disease("diabetes and kidney diseases", measure = "YLDs") %>%
+  cost %>%
+  effect_only
+
+# Power calculations
+nudge("information") %>%
+  sample_size
+nudge("structure") %>%
+  sample_size
+nudge("information") %>%
+  disease("diabetes and kidney diseases", measure = "deaths") %>%
+  sample_size
+nudge("structure") %>%
+  disease("diabetes and kidney diseases", measure = "deaths") %>%
+  sample_size
+
+
+# Unpack guesstimate pipe -------------------------------------------------
+
+# Effect of nudge on behavior
+nudge("information")
+?nudge
+nudge("information") %>%
+  explanation
+nudge_data()
+nudge_codebook()
+nudge_codebook()$nudge %>%
+  View
+
+# Effect of nudge on behavior, and via behavior, on a disease
+nudge("information") %>%
+  disease("diabetes and kidney diseases")
+?disease
+nudge("information") %>%
+  disease("diabetes and kidney diseases") %>%
+  explanation # 3 steps
+
+# Full pipe
+nudge_to_behavior_d("information", behavior = "health") %>%
+  behavior_d_to_pct %>%
+  behavior_pct_to_disease("diabetes and kidney diseases")
+
+nudge_to_behavior_d("information", behavior = "health") %>%
+  behavior_d_to_pct
+nudge_to_behavior_d("information", behavior = "health") %>%
+  behavior_d_to_pct %>%
+  explanation(full = FALSE)
+# weak link! I should develop a better behavior_d_to_pct(), or behavior_d_to_pct(method = "standard deviation of proportion") vs...
+
+# What object are we piping??
+eff1 <- nudge_to_behavior_d("information", behavior = "health")
+class(eff1) # special class for effects
+str(eff1) # with bunch of metadata; bit like "lm" class
+
+better_vignette() # learn more about "better_effect" class etc ("gbd_dataset" class, ...)
+
+
+# GBD data and other causes ---------------------------------------------------
+
+# Where is the data?
+# DO: restart
+options(better.gbd_path = NULL) # don't worry...
+library(cah) # don't worry...
+library(better)
+nudge("information") %>%
+  disease("diabetes and kidney diseases") # message: Loaded GBD data with codebook, assigned to global variable `gbd`
+
+gbd
+gbd_filter("diabetes and kidney diseases")
+gbd_describe("diabetes and kidney diseases")
+gbd_filter("cardiovascular diseases")
+gbd_describe("cardiovascular diseases")
+gbd_causes() # huuuge dataset of causes on the website; not all downloaded!!!
+gbd_browse() # eg look for hypertension, or mental health/depression etc...
+
+
+# Other health outcomes ---------------------------------------------------
+
+# See earlier:
+nudge("information") %>%
+  disease("diabetes and kidney diseases", measure = "DALYs") %>% # default
+  effect_only
+nudge("information") %>%
+  disease("diabetes and kidney diseases", measure = "YLLs") %>%
+  effect_only # DALYs = YLLs + YLDs
+nudge("information") %>%
+  disease("diabetes and kidney diseases", measure = "YLDs") %>%
+  effect_only
+nudge("information") %>%
+  disease("diabetes and kidney diseases", measure = "deaths") %>%
+  effect_only
+
+gbd$measure %>% unique
+gbd_measures()
+gbd_measures() %>%
+  select(measure, explain)
+
+
+# Other variables ---------------------------------------------------------
+
+names(gbd)
+gbd_filter(
+  cause = "diabetes and kidney diseases", metric = "percent",
+  location = "United States of America", sex = "male", age = "70+ years"
+)
+gbd_describe(
+  cause = "diabetes and kidney diseases", metric = "percent",
+  location = "United States of America", sex = "male", age = "70+ years"
+)
+gbd_describe(
+  cause = "HIV/AIDS", location = "Europe"
+) # not downloaded (yet)
+
+
+# Compare to the long manual calculation ----------------------------------
+
+# Manual calculation (see earlier meetings on impact estimates):
+# "If rolled out in a population of 100,000 people for 1 year, we estimate that a triadic incentives program for people taking hypertensive medication would save about 713 life years."
+
+# same with `better`:
+nudge("structure") %>%
+  disease("hypertensive heart disease", measure = "YLLs") %>%
+  effect_only
+
+
+# Other stuff -------------------------------------------------------------
+
+better_vignette(better)
+?better # click Index
+#help(package = "better") # same
+
+
+# How can you do it? -----------------------------------------------------
+
+# Long road: download data...
+better_vignette()
+
+# But data already in CAH Box
+gbd_open()
+
+# Shortcut: help package `cah`
+
+# Illustrate:
+# DO: restart session
+options(better.gbd_path = NULL) # to allow cah to set it
+library(cah) # message: sets better.gbd_path
+library(better)
+library(tidyverse)
+nudge("information") %>%
+  disease("diabetes and kidney diseases") # takes time because reading in `gbd`
+# message: gbd created from better.gbd_path
+
+
+# `cah` package -----------------------------------------------------------
+
+# Install `cah`
+
+# DO: restart
+#remove.packages(c("cah","better"))
+options(better.gbd_path = NULL)
+options(cah.box_path = NULL) # lemme also remove this path, to start anew
+
+# Follow README instructions on github:
+browseURL("https://github.com/janlindemans/cah")
+
+#devtools::install_github("janlindemans/cah")
+library(cah)
+cah_files()
+
+# Browse vignette
+cah_vignette(cah)
+
+# Setup things:
+# Box, Drive
+# .Rprofile
+system2("open", "/Users/jwl38")
+options(
+  cah.box_path = "/Users/jwl38/Library/CloudStorage/Box-Box/CAH/CAH\ Shared"
+) # local path to CAH Shared
+
+?cah # click Index
+cah_files()
+?cah_path
+cah_path(gbd) # JW's local path!
+file.exists(cah_path(gbd)) # success!
+
+# Some other stuff in the `cah` package:
+?theme_cah
+
+library(ggplot2)
+library(gridExtra)
+p1 <- tibble(
+  gender = c(rep("Male",10),rep("Female",10)),
+  x = c(1:10,1:10),
+  y = c(10:1,1:10)
+  ) %>% print %>%
+  ggplot(aes(x,y,color=gender)) +
+  geom_line() +
+  labs(x = "Some variable", y = "Some other variable")
+p1 +
+  theme_cah()
+grid.arrange(
+  p1 +
+    labs(title = "Default theme"),
+  p1 +
+    labs(title = "CAH theme") +
+    theme_cah(),
+  ncol = 2
+)
+
+# Install `better` package
+?install_better
+#install_better() # I already have it installed...
+library(better)
+?better # click Index to learn more
+
+
+# Future ------------------------------------------------------------------
+
+# Make better guesstimate functions
+# Pipe logic makes this easy
+
+# Issues with current functions:
+nudge("structure") %>%
+  disease("hypertensive heart disease", rei = "dietary risks", measure = "YLLs") %>%
+  effect_only
+# Better "food"?
+nudge("structure", behavior = "food") %>%
+  disease("hypertensive heart disease", rei = "dietary risks", measure = "YLLs") %>%
+  effect_only
+# Same, because ceiling effect: 100% reduction in behavioral risk
+nudge("structure") %>%
+  disease("hypertensive heart disease", rei = "dietary risks", measure = "YLLs") %>%
+  explanation # Step 2
+
+
+# Todo --------------------------------------------------------------------
+
+# Thanks for your feedback, all!
+# It would still be great to get feedback on the two packages, whether it all works on your computer, what you think about the calculations for the impact estimates, what you think may still be cool to include in the `cah` package, etc.
+# Thanks!!!
+
+# Here's how to install `cah` and `better`, and set things up:
+
+devtools::install_github("janlindemans/cah")
+# If you want, read the README on GitHub:
+browseURL("https://github.com/janlindemans/cah")
+
+library(cah)
+# Quickly read through the sections on setting things up in the `cah` vignette:
+cah_vignette(cah)
+# Make sure you sync Box
+# Drive is not that important
+# Make sure to set up the Box path in your .Rprofile
+# Something like this:
+options(
+  cah.box_path = "/Users/yourname/Library/CloudStorage/Box-Box/CAH/CAH Shared"
+) # local path to CAH Shared
+
+?cah_path
+cah_path(gbd) # Your local path to the GBD data
+file.exists(cah_path(gbd)) # Does it say TRUE? If not, you got an issue
+
+# Install `better` package
+?cah_install
+cah_install(better)
+library(better)
+
+# Learn more about `cah` package:
+?cah
+# click "Index" at the bottom
+help(package = "cah") # = same
+# take a quick look at the functions in this package
+# scroll up again and click "User guides, package vignettes and other documentation"
+# pre-installed vignette, get it like this:
+cah_vignette(cah)
+# has stuff on `better`, but also on other things
+
+# play around with it...
+
+# Learn (even) more about `better` package:
+?better
+# click "Index" at the bottom
+help(package = "better") # = same
+# take a quick look at the functions in this package
+# scroll up again and click "User guides, package vignettes and other documentation"
+# pre-installed vignettes, get them like this:
+better_vignette(better) # for pre-installed better vignette
+
+# play around with it...
+
+# And here's the code for the demo I did in the Health jam:
+vignette("better-demo")
+# or pre-installed html:
+cah_vignette(`better-demo`)
+# you can run parts of that code, if you want to refer to stuff we did in the meeting
+
+# It would be great to get feedback on the two packages, whether it all works on your computer, what you think about the calculations for the impact estimates, what you think may still be cool to include in the `cah` package, etc.
+
+# Thanks!!!
+
+```

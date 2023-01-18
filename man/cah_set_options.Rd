@@ -10,9 +10,11 @@ cah_set_options(force = FALSE)
 \item{force}{Whether or not to force setting cah options if options are already found}
 }
 \description{
-Sets global options for things like the \code{better} package, specifying the default paths \code{better} will use in many of its functions.
+Sets global options for things like the \code{better} package, specifying the default paths \code{better} will use in many of its functions. Automatically called when loading \code{cah}.
 }
 \examples{
+# Normally the options are already set when loading `cah`.
+# But you can also do it manually, perhaps after you changed some paths.
 # `cah_set_options` assumes you already specified your local path
 # to the `CAH Shared` folder in Box.
 # Hopefully you did this in your .Rprofile file (see README).
@@ -20,7 +22,6 @@ Sets global options for things like the \code{better} package, specifying the de
 options(
   cah.box_path = "/Users/jwl38/Library/CloudStorage/Box-Box/CAH/CAH Shared"
 )
-
-# If you did this, then setting `better` options is easy:
+# If you did this, you can now set `better` options:
 cah_set_options()
 }

@@ -1,41 +1,30 @@
 ---
-output: github_document
+title: "Introduction to the `cah` package"
 ---
-
-<!-- Edit this here to prevent git errors on the topic: lkajsdf -->
-
-<!-- README.md is generated from README.Rmd. Please edit that file -->
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/README-",
-  out.width = "100%"
+  comment = "#>"
 )
+#devtools::build_rmd("vignettes/cah.Rmd")
 ```
 
-# cah
+IMPORTANT: THIS PACKAGE IS UNDER DEVELOPMENT. IT'S AVAILABLE HERE FOR DEVELOPMENT AND TESTING PURPOSES ONLY.
 
-<!-- badges: start -->
-<!-- badges: end -->
+## Introduction
 
-IMPORTANT: THIS PACKAGE IS UNDER DEVELOPMENT.
+<!-- ORIGINAL description here; edit it here; copy paste into DESCRIPTION -->
 
-The `cah` package contains useful tools for CAHers. The two main categories of tools are: tools that make statistical analysis easier, and tools that make collaboration easier. In addition, there's tools that help with research project coorination, etc.
+The `cah` package contains useful tools for CAHers. Some tools help with statistical analysis (e.g., CAH-themed plots), other tools make collaboration easier (e.g., computer-agnostic paths), and there's more (e.g., impact estimates and power calculations for health nudges).
 
-## Installation
-
-You can install the development version of cah from [GitHub](https://github.com/) with:
-
-``` r
-# install.packages("devtools")
-devtools::install_github("janlindemans/cah", build_vignettes = TRUE)
-```
+<!-- end ORIGINAL -->
 
 ## Set up
 
-<!-- COPY from vignette: edit original there -->
+*If you followed the instructions when installing, you should have already set things up. Just in case you haven't yet, I'll repeat the set-up instructions here.*
+
+<!-- ORIGINAL here; edit it here -->
 
 ### Box Sync and Google Drive
 
@@ -97,11 +86,9 @@ nrow(better::gbd_data()) # read GBD data; check how many rows
 
 `better` found the Global Burden of Disease data in CAH Box, yay!
 
-<!-- END COPY -->
+<!-- END original -->
 
-## Usage
-
-<!-- COPY from vignette: edit original there -->
+## Use the `better` package
 
 Now you're set up to use `better`!
 
@@ -250,8 +237,18 @@ readxl::read_excel(cah_path(projects_sheet))
 ```
 
 
-<!-- END COPY -->
+```{r}
 
-## Vignette
+```
 
-Check out the vignette for more examples on how to use the package: `vignette("cah")`.
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```

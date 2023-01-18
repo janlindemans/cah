@@ -6,7 +6,7 @@
 \alias{cah-package}
 \title{cah: Useful tools for CAHers}
 \description{
-The `cah` package contains useful tools for CAHers. The two main categories of tools are: tools that make statistical analysis easier, and tools that make collaboration easier. In addition, there's tools that help with research project coorination, etc.
+The `cah` package contains useful tools for CAHers. Some tools help with statistical analysis (e.g., CAH-themed plots), other tools make collaboration easier (e.g., computer-agnostic paths), and there's more (e.g., impact estimates and power calculations for health nudges).
 }
 \seealso{
 Useful links:

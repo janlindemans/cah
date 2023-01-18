@@ -32,6 +32,6 @@ test_that("better packages works", {
   )
   cah_set_options(force = TRUE)
   #browser()
-  expect_true(is.data.frame(better::gbd_read())) # TAKES LONG
+  expect_true(is.data.frame(better::gbd_data())) # TAKES LONG
 })
 
